@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "439920887949",
+    "project_id": "eccmanager-fffdd",
+    "storage_bucket": "eccmanager-fffdd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:439920887949:android:2b97da61cc990edbc03ac4",
+        "android_client_info": {
+          "package_name": "com.example.eccmanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMWx3-WornVNlNAmcLBAeteG9lhxWzT_g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
