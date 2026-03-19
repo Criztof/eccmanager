@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'login_screen.dart'; // Solo necesitas importar esto una vez
 
 void main() async {
-  // Despertamos a Firebase aquiiiiiiiiii
+  // Inicialización de Firebase.
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
@@ -15,10 +16,20 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(child: Text('¡Hola! Firebase ya está conectado 🔥')),
+    return MaterialApp(
+      debugShowCheckedModeBanner:
+          false, // Quita la etiqueta "Debug" de la esquina
+      title: 'ECC Manager',
+
+      // Configuración del Tema (Para que los controles nativos sean verdes)
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1B5E20)),
+        useMaterial3: true,
       ),
+
+      // AQUÍ ESTÁ LA CORRECCIÓN:
+      // Solo llamamos a la pantalla, sin pasarle nada adentro.
+      home: const LoginScreen(),
     );
   }
 }
