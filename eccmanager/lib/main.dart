@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'login_screen.dart'; // Solo necesitas importar esto una vez
+import 'login_screen.dart';
+
+/*Cuenta de supercvisor:
+Correo: prueba1@gmail.com
+Contraseña: LLuvia_222
+
+Cuenta de becario:
+Correo: becario1@gmail.com
+Contraseña: Fime2026
+
+Cuenta de administrador:
+Correo: admin1@gmail.com
+Contraseña: Fime 2025
+*/
 
 void main() async {
   // Inicialización de Firebase.
@@ -27,8 +40,6 @@ class MainApp extends StatelessWidget {
         useMaterial3: true,
       ),
 
-      // AQUÍ ESTÁ LA CORRECCIÓN:
-      // Solo llamamos a la pantalla, sin pasarle nada adentro.
       home: const LoginScreen(),
     );
   }

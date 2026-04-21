@@ -16,12 +16,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // Lista de dominios permitidos (¡Aquí está tu filtro de seguridad!)
+  // Lista de dominios permitidos.
   final List<String> _dominiosPermitidos = [
     '@gmail.com',
     '@outlook.com',
     '@uanl.edu.mx',
-    '@alumnos.uanl.edu.mx',
   ];
 
   Future<void> _registrar() async {
@@ -40,7 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    // 2. 🛡️ FILTRO DE DOMINIO: Validar que el correo tenga una terminación permitida
+    // 2. FILTRO DE DOMINIO: Validar que el correo tenga una terminación permitida
     bool dominioValido = _dominiosPermitidos.any(
       (dominio) => email.endsWith(dominio),
     );
@@ -69,7 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       String uid = userCredential.user!.uid;
 
-      // 4. 🔒 EL CANDADO: Guardar su perfil en Firestore forzando el rol "becario"
+      // 4. EL CANDADO: Guardar su perfil en Firestore forzando el rol "becario"
       await FirebaseFirestore.instance.collection('usuarios').doc(uid).set({
         'nombre': nombre,
         'correo': email,
@@ -192,7 +191,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-// Reutilizamos tu TextField bonito
+// Reutilizamos TextField 
 class _CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final IconData icon;

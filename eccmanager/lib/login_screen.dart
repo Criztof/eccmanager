@@ -18,7 +18,6 @@ class _LoginScreenState extends State<LoginScreen>
   bool _isLoading = false;
 
   // Función para iniciar sesión con Firebase
-  // Función para iniciar sesión con Firebase
   Future<void> _login() async {
     setState(() => _isLoading = true);
     try {
@@ -32,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen>
       // 2. Extraer el UID del usuario que acaba de entrar
       String uid = userCredential.user!.uid;
 
-      // 3. Preguntarle a tu base de datos qué rol tiene este UID
+      // 3. Preguntarle a base de datos qué rol tiene este UID
       String rol = await FirestoreService().obtenerRolUsuario(uid);
 
       // 4. Entrar a la app pasando el rol
@@ -134,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
 
-              // Botón Olvidaste contraseña
+              // Botón Olvidaste contraseñaaaaaaaaaaaaaaaaaaaa
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -273,7 +272,7 @@ class _CustomTextField extends StatelessWidget {
   }
 }
 
-// Clase de Animación Personalizada (Efecto cascada)
+// Clase de Animación Personalizada.
 class FadeSlideTransition extends StatefulWidget {
   final Widget child;
   final int delay;
