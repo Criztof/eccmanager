@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http; // Para conectar con ImgBB
-import 'dart:convert'; // Para leer la respuesta de ImgBB
+import '../services/formulario_rondin_service.dart'; // Importamos el servicio
 
 class FormularioRondinScreen extends StatefulWidget {
   final String salon;
@@ -25,6 +23,9 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
   String? _imagePath;
   bool _isUploading = false; // Controla la animación de carga
 
+  // Instancia del servicio
+  final FormularioRondinService _rondinService = FormularioRondinService();
+
   // Colores institucionales
   final Color verdeUANL = const Color(0xFF1B5E20);
   final Color fondoGrisaceo = const Color(0xFFF5F9F5);
@@ -45,7 +46,7 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
     }
   }
 
-  // === Función para Enviar a ImgBB y Firebase ===
+  // === Función para Enviar usando el Servicio ===
   Future<void> _enviarReporte() async {
     if (_imagePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -63,46 +64,18 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
     setState(() => _isUploading = true);
 
     try {
-      // 1. Configuración de ImgBB
-      // 🔴 IMPORTANTE: Reemplaza este texto por tu API Key real de ImgBB
-      const String imgbbApiKey = '673e1e8677afae170560298bfef47f2b';
-      const String expiracion6Meses = '15552000'; // 180 días en segundos
-
-      var uri = Uri.parse(
-        'https://api.imgbb.com/1/upload?key=$imgbbApiKey&expiration=$expiracion6Meses',
-      );
-      var request = http.MultipartRequest('POST', uri);
-      request.files.add(
-        await http.MultipartFile.fromPath('image', _imagePath!),
+      // Llamamos a la lógica separada en el servicio
+      await _rondinService.enviarReporte(
+        salon: widget.salon,
+        pcsAutoCad: pcsAutoCad,
+        pcsSinInternet: pcsSinInternet,
+        pcsNoEncienden: pcsNoEncienden,
+        cablesDanados: cablesDanados,
+        observaciones: _obsController.text,
+        imagePath: _imagePath!,
       );
 
-      // 2. Subimos la foto a ImgBB
-      var response = await request.send();
-      if (response.statusCode != 200) {
-        throw Exception('Error al subir imagen a ImgBB');
-      }
-
-      // 3. Extraemos el link público que nos devuelve ImgBB
-      var responseData = await response.stream.bytesToString();
-      var jsonResult = json.decode(responseData);
-      String imageUrl = jsonResult['data']['url'];
-
-      // 4. Guardar todo el ticket en Firestore
-      await FirebaseFirestore.instance.collection('tickets').add({
-        'tipo': 'rondin_software',
-        'salon': widget.salon,
-        'fecha': FieldValue.serverTimestamp(),
-        'pcs_autocad': pcsAutoCad,
-        'pcs_sin_internet': pcsSinInternet,
-        'pcs_no_encienden': pcsNoEncienden,
-        'cables_danados': cablesDanados,
-        'observaciones': _obsController.text,
-        'evidencia_url': imageUrl,
-        'estado': 'completado',
-        'usuario': 'prueba1@gmail.com',
-      });
-
-      // 5. Éxito: Nos regresamos y avisamos
+      // Éxito: Nos regresamos y avisamos
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(

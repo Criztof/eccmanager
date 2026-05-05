@@ -6,14 +6,11 @@ class FirestoreService {
   // ==========================================
   // 1. LÓGICA DE ROLES
   // ==========================================
-
-  // Obtener el rol del usuario que acaba de iniciar sesión
   Future<String> obtenerRolUsuario(String uid) async {
     try {
       DocumentSnapshot doc = await _db.collection('usuarios').doc(uid).get();
       if (doc.exists && doc.data() != null) {
-        return doc.get('rol') ??
-            'becario'; // Por defecto es becario si no tiene rol
+        return doc.get('rol') ?? 'becario';
       }
       return 'becario';
     } catch (e) {
@@ -22,9 +19,8 @@ class FirestoreService {
   }
 
   // ==========================================
-  // 2. LÓGICA DE TICKETS (Híbrido)
+  // 2. LÓGICA DE TICKETS (Bolsa de Trabajo)
   // ==========================================
-
   Future<void> crearTicketRondin(String salon, String adminUid) async {
     await _db.collection('tickets').add({
       'titulo': 'Rondín Salón $salon',
@@ -59,10 +55,16 @@ class FirestoreService {
         .snapshots();
   }
 
+  Future<void> finalizarTicket(String ticketId) async {
+    await _db.collection('tickets').doc(ticketId).update({
+      'estado': 'finalizado',
+      'fecha_finalizacion': FieldValue.serverTimestamp(),
+    });
+  }
+
   // ==========================================
   // 3. LÓGICA DE INVENTARIO (Rondines)
   // ==========================================
-
   Future<void> actualizarEstadoSalon(
     String idSalon,
     int pcAlumnosOK,
