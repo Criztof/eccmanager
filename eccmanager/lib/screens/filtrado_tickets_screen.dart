@@ -15,7 +15,6 @@ class _FiltradoTicketsScreenState extends State<FiltradoTicketsScreen> {
   @override
   void initState() {
     super.initState();
-    // Actualizar vencidos al abrir
     _adminService.actualizarTicketsVencidos();
   }
 
@@ -58,28 +57,27 @@ class _FiltradoTicketsScreenState extends State<FiltradoTicketsScreen> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1B5E20)));
+              child:
+                  CircularProgressIndicator(color: Color(0xFF1B5E20)));
         }
         if (snapshot.hasError) {
-          // Posible error de índice compuesto en Firestore — mostrar mensaje útil
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const Icon(Icons.error_outline,
+                      size: 48, color: Colors.red),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Error al cargar tickets.',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
+                  const Text('Error al cargar tickets.',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 6),
-                  Text(
-                    '${snapshot.error}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
+                  Text('${snapshot.error}',
+                      style: const TextStyle(
+                          color: Colors.grey, fontSize: 12),
+                      textAlign: TextAlign.center),
                 ],
               ),
             ),
@@ -95,7 +93,7 @@ class _FiltradoTicketsScreenState extends State<FiltradoTicketsScreen> {
           padding: const EdgeInsets.all(16),
           itemCount: snapshot.data!.docs.length,
           itemBuilder: (context, index) {
-            var data =
+            final data =
                 snapshot.data!.docs[index].data() as Map<String, dynamic>;
             return _TicketCard(data: data);
           },
@@ -105,18 +103,17 @@ class _FiltradoTicketsScreenState extends State<FiltradoTicketsScreen> {
   }
 }
 
-// ============================================================================
-// TICKET CARD para FiltradoTicketsScreen
-// Muestra info del becario cuando el ticket está completado
-// ============================================================================
+// =============================================================================
+// TICKET CARD — Filtrado
+// =============================================================================
 
 class _TicketCard extends StatelessWidget {
   final Map<String, dynamic> data;
 
   const _TicketCard({required this.data});
 
-  Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
+  Color _getPriorityColor(String p) {
+    switch (p.toLowerCase()) {
       case 'alta':
         return Colors.red;
       case 'media':
@@ -128,32 +125,26 @@ class _TicketCard extends StatelessWidget {
     }
   }
 
-  Color _getEstadoColor(String estado) {
-    switch (estado.toLowerCase()) {
+  Color _getEstadoColor(String e) {
+    switch (e.toLowerCase()) {
       case 'completado':
         return Colors.green;
       case 'vencido':
         return Colors.red;
-      case 'pendiente':
       default:
         return Colors.orange;
     }
   }
 
-  String _tiempoTranscurrido(Timestamp? timestamp) {
-    if (timestamp == null) return 'Hace un momento';
-    DateTime fecha = timestamp.toDate();
-    Duration diff = DateTime.now().difference(fecha);
-    if (diff.inDays > 0) return 'Hace ${diff.inDays} d';
-    if (diff.inHours > 0) return 'Hace ${diff.inHours} h';
-    if (diff.inMinutes > 0) return 'Hace ${diff.inMinutes} min';
-    return 'Hace un momento';
-  }
-
-  String _formatFecha(Timestamp? timestamp) {
-    if (timestamp == null) return 'N/A';
-    final d = timestamp.toDate();
-    return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+  /// Formatea un Timestamp como dd/MM/yyyy HH:mm
+  String _formatFechaHora(Timestamp? ts) {
+    if (ts == null) return 'N/A';
+    final d = ts.toDate();
+    final h = d.hour.toString().padLeft(2, '0');
+    final m = d.minute.toString().padLeft(2, '0');
+    return '${d.day.toString().padLeft(2, '0')}/'
+        '${d.month.toString().padLeft(2, '0')}/'
+        '${d.year} $h:$m';
   }
 
   void _mostrarDetalle(BuildContext context) {
@@ -168,10 +159,10 @@ class _TicketCard extends StatelessWidget {
       builder: (context) {
         return DraggableScrollableSheet(
           expand: false,
-          initialChildSize: 0.6,
+          initialChildSize: 0.65,
           maxChildSize: 0.95,
           minChildSize: 0.4,
-          builder: (_, scrollController) {
+          builder: (_, sc) {
             return Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -181,12 +172,12 @@ class _TicketCard extends StatelessWidget {
               ),
               padding: const EdgeInsets.all(24),
               child: ListView(
-                controller: scrollController,
+                controller: sc,
                 children: [
+                  // Handle
                   Center(
                     child: Container(
-                      width: 40,
-                      height: 5,
+                      width: 40, height: 5,
                       decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(10)),
@@ -202,23 +193,23 @@ class _TicketCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1B5E20)),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
 
-                  // Badge de estado
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color:
-                          _getEstadoColor(estado).withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      estado.toUpperCase(),
-                      style: TextStyle(
-                          color: _getEstadoColor(estado),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12),
+                  // Badge estado
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getEstadoColor(estado).withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(estado.toUpperCase(),
+                          style: TextStyle(
+                              color: _getEstadoColor(estado),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -229,23 +220,27 @@ class _TicketCard extends StatelessWidget {
                       data['salon'] ?? 'N/A'),
                   _detalleRow(Icons.category_outlined, 'Tipo',
                       data['tipo'] ?? 'N/A'),
-                  _detalleRow(Icons.calendar_today_outlined, 'Fecha creación',
-                      _formatFecha(data['fecha'] as Timestamp?)),
+                  _detalleRow(
+                      Icons.calendar_today_outlined,
+                      'Creado',
+                      _formatFechaHora(data['fecha'] as Timestamp?)),
+                  // Vencimiento con la hora exacta (12:00)
                   _detalleRow(
                       Icons.event_busy_outlined,
-                      'Fecha vencimiento',
-                      _formatFecha(
+                      'Vence (mediodía)',
+                      _formatFechaHora(
                           data['fecha_vencimiento'] as Timestamp?)),
-
                   const SizedBox(height: 8),
+
+                  // Prioridad
                   Row(
                     children: [
                       const Icon(Icons.warning_amber_rounded,
                           color: Colors.grey),
                       const SizedBox(width: 10),
                       const Text('Prioridad: ',
-                          style:
-                              TextStyle(color: Colors.grey, fontSize: 15)),
+                          style: TextStyle(
+                              color: Colors.grey, fontSize: 15)),
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
@@ -266,6 +261,8 @@ class _TicketCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
+
+                  // Descripción
                   const Text('Descripción',
                       style: TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 16)),
@@ -277,10 +274,11 @@ class _TicketCard extends StatelessWidget {
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(10)),
                     child: Text(data['descripcion'] ?? 'Sin descripción',
-                        style: const TextStyle(color: Colors.black87)),
+                        style:
+                            const TextStyle(color: Colors.black87)),
                   ),
 
-                  // Información completada por el becario (solo si completado)
+                  // Info del becario si completado
                   if (esCompletado) ...[
                     const SizedBox(height: 20),
                     const Divider(),
@@ -313,26 +311,29 @@ class _TicketCard extends StatelessWidget {
                           color: Colors.grey.shade100,
                           borderRadius: BorderRadius.circular(10)),
                       child: Text(
-                        data['observaciones']?.isNotEmpty == true
+                        (data['observaciones'] ?? '').isNotEmpty
                             ? data['observaciones']
                             : 'Sin observaciones',
-                        style: const TextStyle(color: Colors.black87),
+                        style:
+                            const TextStyle(color: Colors.black87),
                       ),
                     ),
                     if ((data['evidencia_url'] ?? '').isNotEmpty) ...[
                       const SizedBox(height: 12),
                       const Text('Evidencia (URL)',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 15)),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15)),
                       const SizedBox(height: 5),
                       Text(data['evidencia_url'],
                           style: const TextStyle(
                               color: Colors.blue,
-                              decoration: TextDecoration.underline)),
+                              decoration:
+                                  TextDecoration.underline)),
                     ],
                   ],
 
-                  // Si vencido, mostrar aviso
+                  // Aviso si vencido
                   if (esVencido) ...[
                     const SizedBox(height: 20),
                     Container(
@@ -341,15 +342,17 @@ class _TicketCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.red.shade50,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red.shade200),
+                        border:
+                            Border.all(color: Colors.red.shade200),
                       ),
                       child: Row(
                         children: const [
-                          Icon(Icons.error_outline, color: Colors.red),
+                          Icon(Icons.error_outline,
+                              color: Colors.red),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Este ticket venció sin ser completado por el becario.',
+                              'Este ticket venció a las 12:00 sin ser completado por el becario.',
                               style: TextStyle(
                                   color: Colors.red,
                                   fontWeight: FontWeight.w600),
@@ -371,8 +374,8 @@ class _TicketCard extends StatelessWidget {
                     ),
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Cerrar',
-                        style:
-                            TextStyle(color: Colors.white, fontSize: 16)),
+                        style: TextStyle(
+                            color: Colors.white, fontSize: 16)),
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -393,7 +396,8 @@ class _TicketCard extends StatelessWidget {
           Icon(icon, color: Colors.grey, size: 20),
           const SizedBox(width: 10),
           Text('$label: ',
-              style: const TextStyle(color: Colors.grey, fontSize: 15)),
+              style:
+                  const TextStyle(color: Colors.grey, fontSize: 15)),
           Expanded(
             child: Text(
               value,
@@ -412,11 +416,11 @@ class _TicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String title = data['titulo'] ?? 'Sin título';
-    String priority = data['prioridad'] ?? 'Baja';
-    String estado = data['estado'] ?? 'pendiente';
-    Color priorityColor = _getPriorityColor(priority);
-    Color estadoColor = _getEstadoColor(estado);
+    final String title = data['titulo'] ?? 'Sin título';
+    final String priority = data['prioridad'] ?? 'Baja';
+    final String estado = data['estado'] ?? 'pendiente';
+    final Color priorityColor = _getPriorityColor(priority);
+    final Color estadoColor = _getEstadoColor(estado);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -424,7 +428,8 @@ class _TicketCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6),
+          BoxShadow(
+              color: Colors.black.withOpacity(0.03), blurRadius: 6),
         ],
       ),
       child: Material(
@@ -440,20 +445,19 @@ class _TicketCard extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: 10,
-                      height: 10,
+                      width: 10, height: 10,
                       decoration: BoxDecoration(
-                          color: estadoColor, shape: BoxShape.circle),
+                          color: estadoColor,
+                          shape: BoxShape.circle),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 14),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
+                      child: Text(title,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1),
                     ),
                     const SizedBox(width: 8),
                     Container(
@@ -463,13 +467,11 @@ class _TicketCard extends StatelessWidget {
                         color: priorityColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(
-                        priority.toUpperCase(),
-                        style: TextStyle(
-                            color: priorityColor,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold),
-                      ),
+                      child: Text(priority.toUpperCase(),
+                          style: TextStyle(
+                              color: priorityColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -495,29 +497,27 @@ class _TicketCard extends StatelessWidget {
                         size: 14, color: Colors.grey),
                     const SizedBox(width: 4),
                     Text(data['salon'] ?? 'N/A',
-                        style:
-                            const TextStyle(color: Colors.grey, fontSize: 12)),
+                        style: const TextStyle(
+                            color: Colors.grey, fontSize: 12)),
                   ],
                 ),
                 const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: estadoColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        estado.toUpperCase(),
+                // Badge estado en la card
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: estadoColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(estado.toUpperCase(),
                         style: TextStyle(
                             color: estadoColor,
                             fontSize: 10,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
+                            fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ],
             ),

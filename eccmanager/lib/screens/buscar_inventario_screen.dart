@@ -5,7 +5,8 @@ class BuscarInventarioScreen extends StatefulWidget {
   const BuscarInventarioScreen({Key? key}) : super(key: key);
 
   @override
-  State<BuscarInventarioScreen> createState() => _BuscarInventarioScreenState();
+  State<BuscarInventarioScreen> createState() =>
+      _BuscarInventarioScreenState();
 }
 
 class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
@@ -28,9 +29,7 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
       _cargando = true;
       _buscado = false;
     });
-
     final resultados = await _adminService.buscarInventario(query.trim());
-
     setState(() {
       _resultados = resultados;
       _cargando = false;
@@ -50,7 +49,7 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
           initialChildSize: 0.55,
           maxChildSize: 0.9,
           minChildSize: 0.35,
-          builder: (_, scrollController) {
+          builder: (_, sc) {
             return Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -61,12 +60,11 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
               ),
               padding: const EdgeInsets.all(24),
               child: ListView(
-                controller: scrollController,
+                controller: sc,
                 children: [
                   Center(
                     child: Container(
-                      width: 40,
-                      height: 5,
+                      width: 40, height: 5,
                       decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(10)),
@@ -112,7 +110,8 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1B5E20),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -140,7 +139,8 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
           Icon(icon, color: Colors.grey, size: 24),
           const SizedBox(width: 12),
           Text('$label:',
-              style: const TextStyle(color: Colors.grey, fontSize: 16)),
+              style:
+                  const TextStyle(color: Colors.grey, fontSize: 16)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -175,10 +175,10 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
       ),
       body: Column(
         children: [
-          // Barra de búsqueda
+          // ── Barra de búsqueda ─────────────────────────────────────────────
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16.0, vertical: 12),
             child: Row(
               children: [
                 Expanded(
@@ -230,7 +230,7 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
             ),
           ),
 
-          // Resultados
+          // ── Resultados ────────────────────────────────────────────────────
           Expanded(
             child: _cargando
                 ? const Center(
@@ -263,7 +263,8 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
                                 Text(
                                   'No se encontraron artículos.',
                                   style: TextStyle(
-                                      color: Colors.grey, fontSize: 15),
+                                      color: Colors.grey,
+                                      fontSize: 15),
                                 ),
                               ],
                             ),
@@ -275,10 +276,12 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
                             itemBuilder: (context, index) {
                               final item = _resultados[index];
                               return Container(
-                                margin: const EdgeInsets.only(bottom: 12),
+                                margin:
+                                    const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius:
+                                      BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
                                         color: Colors.black
@@ -291,8 +294,9 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
                                   child: InkWell(
                                     borderRadius:
                                         BorderRadius.circular(16),
-                                    onTap: () => _mostrarDetallesMaterial(
-                                        context, item),
+                                    onTap: () =>
+                                        _mostrarDetallesMaterial(
+                                            context, item),
                                     child: ListTile(
                                       contentPadding:
                                           const EdgeInsets.symmetric(
@@ -304,13 +308,17 @@ class _BuscarInventarioScreenState extends State<BuscarInventarioScreen> {
                                                 .withOpacity(0.1),
                                         child: const Icon(
                                             Icons.inventory_2,
-                                            color: Color(0xFF1B5E20)),
+                                            color:
+                                                Color(0xFF1B5E20)),
                                       ),
                                       title: Text(
-                                        item['articulo'] ?? 'Desconocido',
+                                        item['articulo'] ??
+                                            'Desconocido',
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.bold),
-                                        overflow: TextOverflow.ellipsis,
+                                            fontWeight:
+                                                FontWeight.bold),
+                                        overflow:
+                                            TextOverflow.ellipsis,
                                         maxLines: 1,
                                       ),
                                       subtitle: Text(

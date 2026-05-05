@@ -3,7 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AdminService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Obtener el rol del usuario para validación
+  // ---------------------------------------------------------------------------
+  // USUARIOS
+  // ---------------------------------------------------------------------------
+
   Future<String> obtenerRolUsuario(String uid) async {
     try {
       DocumentSnapshot doc =
@@ -17,7 +20,6 @@ class AdminService {
     }
   }
 
-  // Obtener lista de usuarios con el rol 'becario'
   Future<List<Map<String, dynamic>>> obtenerBecarios() async {
     try {
       QuerySnapshot query = await _firestore
@@ -36,7 +38,10 @@ class AdminService {
     }
   }
 
-  // Stream de tickets recientes (limitado a 3)
+  // ---------------------------------------------------------------------------
+  // TICKETS — streams
+  // ---------------------------------------------------------------------------
+
   Stream<QuerySnapshot> obtenerTicketsRecientes() {
     return _firestore
         .collection('tickets')
@@ -45,7 +50,6 @@ class AdminService {
         .snapshots();
   }
 
-  // Stream de todos los tickets pendientes (para conteo en hero)
   Stream<QuerySnapshot> obtenerTicketsPendientes() {
     return _firestore
         .collection('tickets')
@@ -53,7 +57,7 @@ class AdminService {
         .snapshots();
   }
 
-  // Stream de tickets filtrados por estado (pendiente / completado / vencido)
+  /// Estado puede ser: 'pendiente', 'completado' o 'vencido'
   Stream<QuerySnapshot> obtenerTicketsPorEstado(String estado) {
     return _firestore
         .collection('tickets')
@@ -62,12 +66,29 @@ class AdminService {
         .snapshots();
   }
 
-  // Stream de inventario para la vista de inventario_material
+  Stream<int> obtenerConteoTicketsAbiertos() {
+    return _firestore
+        .collection('tickets')
+        .where('estado', isEqualTo: 'pendiente')
+        .snapshots()
+        .map((s) => s.docs.length);
+  }
+
+  // ---------------------------------------------------------------------------
+  // INVENTARIO
+  // ---------------------------------------------------------------------------
+
   Stream<QuerySnapshot> obtenerInventarioMaterial() {
     return _firestore.collection('inventario_material').snapshots();
   }
 
-  // Buscar documentos en inventario_material por nombre de artículo (búsqueda local)
+  Stream<int> obtenerConteoInventario() {
+    return _firestore
+        .collection('inventario_material')
+        .snapshots()
+        .map((s) => s.docs.length);
+  }
+
   Future<List<Map<String, dynamic>>> buscarInventario(String query) async {
     try {
       QuerySnapshot snapshot =
@@ -89,36 +110,61 @@ class AdminService {
     }
   }
 
-  // Conteo de documentos en inventario_material (número de tipos/artículos únicos)
-  Stream<int> obtenerConteoInventario() {
-    return _firestore.collection('inventario_material').snapshots().map(
-          (snapshot) => snapshot.docs.length,
-        );
+  // ---------------------------------------------------------------------------
+  // LÓGICA DE VENCIMIENTO
+  //
+  // Regla de negocio:
+  //   • 'Inventariar material del CET' → vence el VIERNES a las 12:00
+  //   • Cualquier otro tipo            → vence el JUEVES a las 12:00
+  //
+  // Si hoy ya es ese día pero ya pasó el mediodía, o el día ya pasó en la
+  // semana, se avanza a la semana siguiente para dar al menos un ciclo.
+  // ---------------------------------------------------------------------------
+
+  /// Calcula la DateTime exacta de vencimiento: 12:00:00 del Jueves o Viernes
+  /// más próximo según el tipo de ticket.
+  static DateTime calcularFechaVencimiento(String tipo) {
+    final DateTime now = DateTime.now();
+
+    // Día objetivo de la semana (1=lunes … 5=viernes)
+    final int targetWeekday =
+        (tipo == 'Inventariar material del CET') ? DateTime.friday : DateTime.thursday;
+
+    int daysToAdd = targetWeekday - now.weekday;
+
+    // Si ya pasó ese día esta semana, o es hoy pero ya pasó el mediodía → siguiente semana
+    if (daysToAdd < 0 || (daysToAdd == 0 && now.hour >= 12)) {
+      daysToAdd += 7;
+    }
+
+    final DateTime fechaBase = now.add(Duration(days: daysToAdd));
+
+    // Fijar exactamente a las 12:00:00 (mediodía)
+    return DateTime(
+      fechaBase.year,
+      fechaBase.month,
+      fechaBase.day,
+      12,
+      0,
+      0,
+    );
   }
 
-  // Conteo de tickets abiertos (pendientes)
-  Stream<int> obtenerConteoTicketsAbiertos() {
-    return _firestore
-        .collection('tickets')
-        .where('estado', isEqualTo: 'pendiente')
-        .snapshots()
-        .map((snapshot) => snapshot.docs.length);
-  }
-
-  // Verificar y actualizar tickets vencidos (llamar periódicamente o al abrir la app)
+  /// Revisa todos los tickets 'pendiente' y, si su fecha_vencimiento
+  /// (mediodía del día objetivo) ya pasó, los actualiza a 'vencido'.
+  /// Llamar al iniciar AdminView y FiltradoTicketsScreen.
   Future<void> actualizarTicketsVencidos() async {
     try {
-      final ahora = DateTime.now();
+      final DateTime ahora = DateTime.now();
       final QuerySnapshot pendientes = await _firestore
           .collection('tickets')
           .where('estado', isEqualTo: 'pendiente')
           .get();
 
-      for (var doc in pendientes.docs) {
+      for (final doc in pendientes.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        final fechaVencimiento = data['fecha_vencimiento'] as Timestamp?;
-        if (fechaVencimiento != null &&
-            fechaVencimiento.toDate().isBefore(ahora)) {
+        final Timestamp? ts = data['fecha_vencimiento'] as Timestamp?;
+        if (ts != null && ts.toDate().isBefore(ahora)) {
           await doc.reference.update({'estado': 'vencido'});
         }
       }
@@ -127,7 +173,10 @@ class AdminService {
     }
   }
 
-  // Crear nuevo ticket con lógica de autoasignación de fechas y valores vacíos
+  // ---------------------------------------------------------------------------
+  // CREAR TICKET
+  // ---------------------------------------------------------------------------
+
   Future<void> crearTicket({
     required String titulo,
     required String descripcion,
@@ -138,21 +187,11 @@ class AdminService {
     required String salon,
   }) async {
     try {
-      // Número de ticket automático usando milisegundos para ser único
-      String numeroTicket =
+      final String numeroTicket =
           "TKT-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}";
 
-      // Cálculo de fecha de vencimiento (Jueves o Viernes más cercano)
-      DateTime now = DateTime.now();
-      int targetDay = (tipo == 'Inventariar material del CET')
-          ? DateTime.friday
-          : DateTime.thursday;
-
-      int daysToAdd = targetDay - now.weekday;
-      if (daysToAdd <= 0) {
-        daysToAdd += 7;
-      }
-      DateTime fechaVencimiento = now.add(Duration(days: daysToAdd));
+      // Mediodía del jueves o viernes más próximo
+      final DateTime fechaVencimiento = calcularFechaVencimiento(tipo);
 
       await _firestore.collection('tickets').add({
         'titulo': titulo,
@@ -165,11 +204,12 @@ class AdminService {
         'salon': salon,
         'estado': 'pendiente',
         'fecha': FieldValue.serverTimestamp(),
+        // Vence exactamente a las 12:00:00 del día objetivo
         'fecha_vencimiento': Timestamp.fromDate(fechaVencimiento),
-        // Valores que el becario rellenará
+        // Campos que el becario rellenará al completar
         'cables_danados': 0,
-        'evidencia_url': "",
-        'observaciones': "",
+        'evidencia_url': '',
+        'observaciones': '',
         'pcs_autocad': 0,
         'pcs_no_encienden': 0,
         'pcs_sin_internet': 0,
