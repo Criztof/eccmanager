@@ -16,12 +16,22 @@ class _BecarioInventarioSalonesScreenState
 
   static const Color verdeUANL = Color(0xFF1B5E20);
 
+  // Formatea un Timestamp a texto legible
+  String _formatearFecha(dynamic ts) {
+    if (ts == null) return 'N/A';
+    if (ts is Timestamp) {
+      final d = ts.toDate();
+      return '${d.day.toString().padLeft(2, '0')}/'
+          '${d.month.toString().padLeft(2, '0')}/'
+          '${d.year}  '
+          '${d.hour.toString().padLeft(2, '0')}:'
+          '${d.minute.toString().padLeft(2, '0')}';
+    }
+    return ts.toString();
+  }
+
   // ── MODAL: DETALLE DE SALÓN ──────────────────────────────────────────────────
   void _mostrarDetalle(Map<String, dynamic> data) {
-    final equipos = data['equipos'] as Map<String, dynamic>? ?? {};
-    final int alumnos = equipos['alumnos'] ?? 0;
-    final int maestro = equipos['maestro'] ?? 0;
-
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -29,7 +39,7 @@ class _BecarioInventarioSalonesScreenState
       builder: (_) {
         return DraggableScrollableSheet(
           expand: false,
-          initialChildSize: 0.5,
+          initialChildSize: 0.55,
           maxChildSize: 0.85,
           minChildSize: 0.35,
           builder: (_, sc) {
@@ -47,7 +57,8 @@ class _BecarioInventarioSalonesScreenState
                 children: [
                   Center(
                     child: Container(
-                      width: 40, height: 5,
+                      width: 40,
+                      height: 5,
                       decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(10)),
@@ -68,7 +79,7 @@ class _BecarioInventarioSalonesScreenState
                       const SizedBox(width: 16),
                       Expanded(
                         child: Text(
-                          'Salón ${data['numero_sala'] ?? data['salon'] ?? 'N/A'}',
+                          'Salón ${data['salon'] ?? 'N/A'}',
                           style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -79,20 +90,21 @@ class _BecarioInventarioSalonesScreenState
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _infoRow(Icons.meeting_room_outlined, 'Número de sala',
-                      data['numero_sala'] ?? data['salon'] ?? 'N/A'),
-                  _infoRow(Icons.school_outlined, 'Equipos de alumnos',
-                      '$alumnos'),
-                  _infoRow(Icons.person_outline, 'Equipo del maestro',
-                      '$maestro'),
+                  _infoRow(Icons.meeting_room_outlined, 'Salón',
+                      data['salon'] ?? 'N/A'),
+                  _infoRow(Icons.school_outlined, 'Cant. Alumnos',
+                      '${data['cant_alumnos'] ?? 0}'),
+                  _infoRow(Icons.person_outline, 'Cant. Maestros',
+                      '${data['cant_maestros'] ?? 0}'),
                   _infoRow(Icons.apps, 'Software asignado',
                       data['software_asignado'] ?? 'N/A'),
+                  _infoRow(Icons.update, 'Última actualización',
+                      _formatearFecha(data['ultima_actualizacion'])),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: verdeUANL,
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -113,10 +125,10 @@ class _BecarioInventarioSalonesScreenState
 
   // ── MODAL: AGREGAR SALÓN ─────────────────────────────────────────────────────
   void _mostrarFormularioAgregar() {
-    final _formKey = GlobalKey<FormState>();
-    final numeroSalaCtrl = TextEditingController();
-    final alumnosCtrl = TextEditingController(text: '0');
-    final maestroCtrl = TextEditingController(text: '1');
+    final formKey = GlobalKey<FormState>();
+    final salonCtrl = TextEditingController();
+    final cantAlumnosCtrl = TextEditingController(text: '0');
+    final cantMaestrosCtrl = TextEditingController(text: '1');
     final nuevoSoftwareCtrl = TextEditingController();
 
     String? softwareSeleccionado;
@@ -137,8 +149,7 @@ class _BecarioInventarioSalonesScreenState
 
                 return Padding(
                   padding: EdgeInsets.only(
-                    bottom:
-                        MediaQuery.of(context).viewInsets.bottom,
+                    bottom: MediaQuery.of(context).viewInsets.bottom,
                   ),
                   child: Container(
                     decoration: const BoxDecoration(
@@ -151,14 +162,16 @@ class _BecarioInventarioSalonesScreenState
                     padding: const EdgeInsets.all(24),
                     child: SingleChildScrollView(
                       child: Form(
-                        key: _formKey,
+                        key: formKey,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Handle
                             Center(
                               child: Container(
-                                width: 40, height: 5,
+                                width: 40,
+                                height: 5,
                                 decoration: BoxDecoration(
                                     color: Colors.grey[300],
                                     borderRadius:
@@ -176,11 +189,11 @@ class _BecarioInventarioSalonesScreenState
                             ),
                             const SizedBox(height: 20),
 
-                            // Número de sala
+                            // Salón
                             TextFormField(
-                              controller: numeroSalaCtrl,
+                              controller: salonCtrl,
                               decoration: InputDecoration(
-                                labelText: 'Número de salón',
+                                labelText: 'Salón',
                                 hintText: 'Ej. 4-102',
                                 border: OutlineInputBorder(
                                     borderRadius:
@@ -192,26 +205,24 @@ class _BecarioInventarioSalonesScreenState
                             ),
                             const SizedBox(height: 14),
 
-                            // Equipos de alumnos y maestro lado a lado
+                            // Cantidad alumnos y maestros lado a lado
                             Row(
                               children: [
                                 Expanded(
                                   child: TextFormField(
-                                    controller: alumnosCtrl,
-                                    keyboardType:
-                                        TextInputType.number,
+                                    controller: cantAlumnosCtrl,
+                                    keyboardType: TextInputType.number,
                                     decoration: InputDecoration(
-                                      labelText: 'Equipos Alumnos',
+                                      labelText: 'Cant. Alumnos',
                                       border: OutlineInputBorder(
                                           borderRadius:
-                                              BorderRadius.circular(
-                                                  12)),
+                                              BorderRadius.circular(12)),
                                     ),
                                     validator: (v) {
-                                      if (v == null || v.isEmpty)
+                                      if (v!.trim().isEmpty)
                                         return 'Requerido';
-                                      if (int.tryParse(v) == null)
-                                        return 'Número';
+                                      if (int.tryParse(v.trim()) == null)
+                                        return 'Número inválido';
                                       return null;
                                     },
                                   ),
@@ -219,21 +230,19 @@ class _BecarioInventarioSalonesScreenState
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: TextFormField(
-                                    controller: maestroCtrl,
-                                    keyboardType:
-                                        TextInputType.number,
+                                    controller: cantMaestrosCtrl,
+                                    keyboardType: TextInputType.number,
                                     decoration: InputDecoration(
-                                      labelText: 'Equipo Maestro',
+                                      labelText: 'Cant. Maestros',
                                       border: OutlineInputBorder(
                                           borderRadius:
-                                              BorderRadius.circular(
-                                                  12)),
+                                              BorderRadius.circular(12)),
                                     ),
                                     validator: (v) {
-                                      if (v == null || v.isEmpty)
+                                      if (v!.trim().isEmpty)
                                         return 'Requerido';
-                                      if (int.tryParse(v) == null)
-                                        return 'Número';
+                                      if (int.tryParse(v.trim()) == null)
+                                        return 'Número inválido';
                                       return null;
                                     },
                                   ),
@@ -242,12 +251,12 @@ class _BecarioInventarioSalonesScreenState
                             ),
                             const SizedBox(height: 14),
 
-                            // Software — dropdown + opción nueva
+                            // Software asignado — dropdown + opción nueva
                             if (!agregandoNuevoSoftware) ...[
                               DropdownButtonFormField<String>(
                                 value: softwareSeleccionado,
                                 decoration: InputDecoration(
-                                  labelText: 'Software Asignado',
+                                  labelText: 'Software asignado',
                                   border: OutlineInputBorder(
                                       borderRadius:
                                           BorderRadius.circular(12)),
@@ -255,58 +264,53 @@ class _BecarioInventarioSalonesScreenState
                                 items: [
                                   ...softwares.map((s) =>
                                       DropdownMenuItem(
-                                          value: s,
-                                          child: Text(s))),
+                                          value: s, child: Text(s))),
                                   const DropdownMenuItem(
                                     value: '__nuevo__',
-                                    child: Text(
-                                      '+ Nuevo software',
-                                      style: TextStyle(
-                                          color: verdeUANL,
-                                          fontWeight:
-                                              FontWeight.bold),
-                                    ),
+                                    child: Text('+ Nuevo software',
+                                        style: TextStyle(
+                                            color: verdeUANL,
+                                            fontWeight:
+                                                FontWeight.bold)),
                                   ),
                                 ],
-                                onChanged: (val) {
-                                  if (val == '__nuevo__') {
+                                onChanged: (v) {
+                                  if (v == '__nuevo__') {
                                     setModalState(() {
                                       agregandoNuevoSoftware = true;
                                       softwareSeleccionado = null;
                                     });
                                   } else {
-                                    setModalState(() =>
-                                        softwareSeleccionado = val);
+                                    setModalState(
+                                        () => softwareSeleccionado = v);
                                   }
                                 },
-                                validator: (val) => val == null
-                                    ? 'Selecciona un software'
-                                    : null,
+                                validator: (v) =>
+                                    (v == null || v == '__nuevo__')
+                                        ? 'Selecciona un software'
+                                        : null,
                               ),
                             ] else ...[
                               TextFormField(
                                 controller: nuevoSoftwareCtrl,
-                                autofocus: true,
                                 decoration: InputDecoration(
-                                  labelText: 'Nombre del Software',
+                                  labelText: 'Nuevo software',
                                   border: OutlineInputBorder(
                                       borderRadius:
                                           BorderRadius.circular(12)),
                                   suffixIcon: IconButton(
-                                    icon: const Icon(Icons.close,
-                                        color: Colors.grey),
-                                    onPressed: () {
-                                      setModalState(() {
-                                        agregandoNuevoSoftware =
-                                            false;
-                                        nuevoSoftwareCtrl.clear();
-                                      });
-                                    },
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () => setModalState(() {
+                                      agregandoNuevoSoftware = false;
+                                      nuevoSoftwareCtrl.clear();
+                                    }),
                                   ),
                                 ),
-                                validator: (v) => v!.trim().isEmpty
-                                    ? 'Requerido'
-                                    : null,
+                                validator: (v) =>
+                                    (agregandoNuevoSoftware &&
+                                            v!.trim().isEmpty)
+                                        ? 'Ingresa el software'
+                                        : null,
                               ),
                             ],
                             const SizedBox(height: 24),
@@ -314,24 +318,23 @@ class _BecarioInventarioSalonesScreenState
                             // Botón guardar
                             SizedBox(
                               width: double.infinity,
-                              height: 50,
+                              height: 52,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: verdeUANL,
                                   shape: RoundedRectangleBorder(
                                       borderRadius:
-                                          BorderRadius.circular(12)),
+                                          BorderRadius.circular(14)),
                                 ),
                                 onPressed: guardando
                                     ? null
                                     : () async {
-                                        if (!_formKey.currentState!
+                                        if (!formKey.currentState!
                                             .validate()) return;
 
-                                        final String swFinal =
+                                        final swFinal =
                                             agregandoNuevoSoftware
-                                                ? nuevoSoftwareCtrl
-                                                    .text
+                                                ? nuevoSoftwareCtrl.text
                                                     .trim()
                                                 : softwareSeleccionado!;
 
@@ -339,14 +342,12 @@ class _BecarioInventarioSalonesScreenState
                                             () => guardando = true);
 
                                         await _service.agregarSalon(
-                                          numeroSala: numeroSalaCtrl
-                                              .text
-                                              .trim(),
-                                          alumnos: int.parse(
-                                              alumnosCtrl.text
+                                          salon: salonCtrl.text.trim(),
+                                          cantAlumnos: int.parse(
+                                              cantAlumnosCtrl.text
                                                   .trim()),
-                                          maestro: int.parse(
-                                              maestroCtrl.text
+                                          cantMaestros: int.parse(
+                                              cantMaestrosCtrl.text
                                                   .trim()),
                                           softwareAsignado: swFinal,
                                         );
@@ -429,14 +430,7 @@ class _BecarioInventarioSalonesScreenState
             style: TextStyle(
                 color: verdeUANL, fontWeight: FontWeight.bold)),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon:
-                const Icon(Icons.add_circle_outline, color: verdeUANL),
-            tooltip: 'Agregar salón',
-            onPressed: _mostrarFormularioAgregar,
-          ),
-        ],
+        // Sin acciones — se quitó el ícono "+"
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _service.obtenerInventarioSalones(),
@@ -451,39 +445,27 @@ class _BecarioInventarioSalonesScreenState
                     style: const TextStyle(color: Colors.red)));
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(
+            return const Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.computer_outlined,
+                  Icon(Icons.computer_outlined,
                       size: 64, color: Colors.grey),
-                  const SizedBox(height: 12),
-                  const Text('No hay salones registrados.',
+                  SizedBox(height: 12),
+                  Text('No hay salones registrados.',
                       style: TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _mostrarFormularioAgregar,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Agregar salón'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: verdeUANL,
-                        foregroundColor: Colors.white),
-                  ),
                 ],
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(
+                left: 16, right: 16, top: 16, bottom: 100),
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
               final data = snapshot.data!.docs[index].data()
                   as Map<String, dynamic>;
-              final equipos =
-                  data['equipos'] as Map<String, dynamic>? ?? {};
-              final int alumnos = equipos['alumnos'] ?? 0;
-              final int maestro = equipos['maestro'] ?? 0;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -510,14 +492,16 @@ class _BecarioInventarioSalonesScreenState
                             color: verdeUANL),
                       ),
                       title: Text(
-                        'Salón ${data['numero_sala'] ?? data['salon'] ?? 'N/A'}',
+                        'Salón ${data['salon'] ?? 'N/A'}',
                         style: const TextStyle(
                             fontWeight: FontWeight.bold),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
                       subtitle: Text(
-                        'Alumnos: $alumnos • Maestro: $maestro • ${data['software_asignado'] ?? 'Sin software'}',
+                        'Alumnos: ${data['cant_alumnos'] ?? 0} • '
+                        'Maestros: ${data['cant_maestros'] ?? 0} • '
+                        '${data['software_asignado'] ?? 'Sin software'}',
                         overflow: TextOverflow.ellipsis,
                       ),
                       trailing: const Icon(Icons.arrow_forward_ios,
@@ -530,10 +514,33 @@ class _BecarioInventarioSalonesScreenState
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _mostrarFormularioAgregar,
-        backgroundColor: verdeUANL,
-        child: const Icon(Icons.add, color: Colors.white),
+
+      // ── BOTÓN INFERIOR CENTRADO ESTILO "NUEVO TICKET" ────────────────────────
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton.icon(
+            onPressed: _mostrarFormularioAgregar,
+            icon: const Icon(Icons.add_circle_outline,
+                color: Colors.white, size: 22),
+            label: const Text(
+              'Agregar Salón',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: verdeUANL,
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+        ),
       ),
     );
   }

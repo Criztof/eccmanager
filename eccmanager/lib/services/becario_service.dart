@@ -66,8 +66,7 @@ class BecarioService {
       final ts = data['fecha_completado'] as Timestamp?;
       if (ts == null) return false;
       final fecha = ts.toDate();
-      return fecha.isAfter(inicioSemana) &&
-          fecha.isBefore(finSemana);
+      return fecha.isAfter(inicioSemana) && fecha.isBefore(finSemana);
     }).toList();
   }
 
@@ -163,20 +162,20 @@ class BecarioService {
     return softwares;
   }
 
+  /// Agrega un salón con los campos:
+  /// salon, cant_alumnos, cant_maestros, software_asignado, ultima_actualizacion
   Future<void> agregarSalon({
-    required String numeroSala,
-    required int alumnos,
-    required int maestro,
+    required String salon,
+    required int cantAlumnos,
+    required int cantMaestros,
     required String softwareAsignado,
   }) async {
     await _firestore.collection('inventario_salones').add({
-      'numero_sala': numeroSala,
-      'salon': numeroSala,
-      'equipos': {
-        'alumnos': alumnos,
-        'maestro': maestro,
-      },
+      'salon': salon,
+      'cant_alumnos': cantAlumnos,
+      'cant_maestros': cantMaestros,
       'software_asignado': softwareAsignado,
+      'ultima_actualizacion': FieldValue.serverTimestamp(),
     });
   }
 }

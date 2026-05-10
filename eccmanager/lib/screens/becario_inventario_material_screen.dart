@@ -43,7 +43,8 @@ class _BecarioInventarioMaterialScreenState
                 children: [
                   Center(
                     child: Container(
-                      width: 40, height: 5,
+                      width: 40,
+                      height: 5,
                       decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(10)),
@@ -88,8 +89,7 @@ class _BecarioInventarioMaterialScreenState
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: verdeUANL,
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -110,12 +110,11 @@ class _BecarioInventarioMaterialScreenState
 
   // ── MODAL: AGREGAR ARTÍCULO ──────────────────────────────────────────────────
   void _mostrarFormularioAgregar() {
-    final _formKey = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
     final articuloCtrl = TextEditingController();
     final cantidadCtrl = TextEditingController(text: '1');
     final nuevaCatCtrl = TextEditingController();
 
-    // Estados iniciales dentro del modal
     String? categoriaSeleccionada;
     String estadoSeleccionado = 'Normal';
     bool agregandoNuevaCat = false;
@@ -156,7 +155,7 @@ class _BecarioInventarioMaterialScreenState
                     padding: const EdgeInsets.all(24),
                     child: SingleChildScrollView(
                       child: Form(
-                        key: _formKey,
+                        key: formKey,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +163,8 @@ class _BecarioInventarioMaterialScreenState
                             // Handle
                             Center(
                               child: Container(
-                                width: 40, height: 5,
+                                width: 40,
+                                height: 5,
                                 decoration: BoxDecoration(
                                     color: Colors.grey[300],
                                     borderRadius:
@@ -209,56 +209,52 @@ class _BecarioInventarioMaterialScreenState
                                 items: [
                                   ...categorias.map((c) =>
                                       DropdownMenuItem(
-                                          value: c,
-                                          child: Text(c))),
+                                          value: c, child: Text(c))),
                                   const DropdownMenuItem(
                                     value: '__nueva__',
-                                    child: Text(
-                                      '+ Nueva categoría',
-                                      style: TextStyle(
-                                          color: verdeUANL,
-                                          fontWeight:
-                                              FontWeight.bold),
-                                    ),
+                                    child: Text('+ Nueva categoría',
+                                        style: TextStyle(
+                                            color: verdeUANL,
+                                            fontWeight:
+                                                FontWeight.bold)),
                                   ),
                                 ],
-                                onChanged: (val) {
-                                  if (val == '__nueva__') {
+                                onChanged: (v) {
+                                  if (v == '__nueva__') {
                                     setModalState(() {
                                       agregandoNuevaCat = true;
                                       categoriaSeleccionada = null;
                                     });
                                   } else {
-                                    setModalState(() =>
-                                        categoriaSeleccionada = val);
+                                    setModalState(
+                                        () => categoriaSeleccionada = v);
                                   }
                                 },
-                                validator: (val) => val == null
-                                    ? 'Selecciona una categoría'
-                                    : null,
+                                validator: (v) =>
+                                    (v == null || v == '__nueva__')
+                                        ? 'Selecciona una categoría'
+                                        : null,
                               ),
                             ] else ...[
                               TextFormField(
                                 controller: nuevaCatCtrl,
-                                autofocus: true,
                                 decoration: InputDecoration(
-                                  labelText: 'Nueva Categoría',
+                                  labelText: 'Nueva categoría',
                                   border: OutlineInputBorder(
                                       borderRadius:
                                           BorderRadius.circular(12)),
                                   suffixIcon: IconButton(
-                                    icon: const Icon(Icons.close,
-                                        color: Colors.grey),
-                                    onPressed: () {
-                                      setModalState(() {
-                                        agregandoNuevaCat = false;
-                                        nuevaCatCtrl.clear();
-                                      });
-                                    },
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () => setModalState(() {
+                                      agregandoNuevaCat = false;
+                                      nuevaCatCtrl.clear();
+                                    }),
                                   ),
                                 ),
-                                validator: (v) =>
-                                    v!.trim().isEmpty ? 'Requerido' : null,
+                                validator: (v) => (agregandoNuevaCat &&
+                                        v!.trim().isEmpty)
+                                    ? 'Ingresa la categoría'
+                                    : null,
                               ),
                             ],
                             const SizedBox(height: 14),
@@ -276,8 +272,8 @@ class _BecarioInventarioMaterialScreenState
                                   .map((e) => DropdownMenuItem(
                                       value: e, child: Text(e)))
                                   .toList(),
-                              onChanged: (val) => setModalState(
-                                  () => estadoSeleccionado = val!),
+                              onChanged: (v) => setModalState(
+                                  () => estadoSeleccionado = v!),
                             ),
                             const SizedBox(height: 14),
 
@@ -292,11 +288,9 @@ class _BecarioInventarioMaterialScreenState
                                         BorderRadius.circular(12)),
                               ),
                               validator: (v) {
-                                if (v == null || v.isEmpty)
-                                  return 'Requerido';
-                                if (int.tryParse(v) == null ||
-                                    int.parse(v) < 0)
-                                  return 'Número válido';
+                                if (v!.trim().isEmpty) return 'Requerido';
+                                if (int.tryParse(v.trim()) == null)
+                                  return 'Número inválido';
                                 return null;
                               },
                             ),
@@ -305,39 +299,35 @@ class _BecarioInventarioMaterialScreenState
                             // Botón guardar
                             SizedBox(
                               width: double.infinity,
-                              height: 50,
+                              height: 52,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: verdeUANL,
                                   shape: RoundedRectangleBorder(
                                       borderRadius:
-                                          BorderRadius.circular(12)),
+                                          BorderRadius.circular(14)),
                                 ),
                                 onPressed: guardando
                                     ? null
                                     : () async {
-                                        if (!_formKey.currentState!
+                                        if (!formKey.currentState!
                                             .validate()) return;
 
-                                        // Determinar categoría final
-                                        final String catFinal =
-                                            agregandoNuevaCat
-                                                ? nuevaCatCtrl.text
-                                                    .trim()
-                                                : categoriaSeleccionada!;
+                                        final catFinal = agregandoNuevaCat
+                                            ? nuevaCatCtrl.text.trim()
+                                            : categoriaSeleccionada!;
 
                                         setModalState(
                                             () => guardando = true);
 
                                         await _service
                                             .agregarArticuloInventario(
-                                          articulo: articuloCtrl.text
-                                              .trim(),
+                                          articulo:
+                                              articuloCtrl.text.trim(),
                                           categoria: catFinal,
                                           estado: estadoSeleccionado,
                                           cantidad: int.parse(
-                                              cantidadCtrl.text
-                                                  .trim()),
+                                              cantidadCtrl.text.trim()),
                                         );
 
                                         if (context.mounted) {
@@ -418,13 +408,7 @@ class _BecarioInventarioMaterialScreenState
             style: TextStyle(
                 color: verdeUANL, fontWeight: FontWeight.bold)),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: verdeUANL),
-            tooltip: 'Agregar artículo',
-            onPressed: _mostrarFormularioAgregar,
-          ),
-        ],
+        // Sin acciones — se quitó el ícono "+"
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _service.obtenerInventarioMaterial(),
@@ -448,22 +432,14 @@ class _BecarioInventarioMaterialScreenState
                   const SizedBox(height: 12),
                   const Text('No hay artículos registrados.',
                       style: TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _mostrarFormularioAgregar,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Agregar artículo'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: verdeUANL,
-                        foregroundColor: Colors.white),
-                  ),
                 ],
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding:
+                const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
               final data = snapshot.data!.docs[index].data()
@@ -513,10 +489,33 @@ class _BecarioInventarioMaterialScreenState
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _mostrarFormularioAgregar,
-        backgroundColor: verdeUANL,
-        child: const Icon(Icons.add, color: Colors.white),
+
+      // ── BOTÓN INFERIOR CENTRADO ESTILO "NUEVO TICKET" ────────────────────────
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton.icon(
+            onPressed: _mostrarFormularioAgregar,
+            icon: const Icon(Icons.add_circle_outline,
+                color: Colors.white, size: 22),
+            label: const Text(
+              'Agregar Artículo',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: verdeUANL,
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+        ),
       ),
     );
   }
