@@ -5,6 +5,8 @@ import '../services/admin_service.dart';
 class InventarioScreen extends StatelessWidget {
   const InventarioScreen({Key? key}) : super(key: key);
 
+  static const Color verdeUANL = Color(0xFF1B5E20);
+
   void _mostrarDetallesMaterial(
       BuildContext context, Map<String, dynamic> data) {
     showModalBottomSheet(
@@ -17,7 +19,7 @@ class InventarioScreen extends StatelessWidget {
           initialChildSize: 0.55,
           maxChildSize: 0.9,
           minChildSize: 0.35,
-          builder: (_, scrollController) {
+          builder: (_, sc) {
             return Container(
               decoration: const BoxDecoration(
                 color: Colors.white,
@@ -28,12 +30,11 @@ class InventarioScreen extends StatelessWidget {
               ),
               padding: const EdgeInsets.all(24),
               child: ListView(
-                controller: scrollController,
+                controller: sc,
                 children: [
                   Center(
                     child: Container(
-                      width: 40,
-                      height: 5,
+                      width: 40, height: 5,
                       decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(10)),
@@ -49,7 +50,7 @@ class InventarioScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Icon(Icons.inventory_2,
-                            color: Color(0xFF1B5E20), size: 32),
+                            color: verdeUANL, size: 32),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -73,12 +74,14 @@ class InventarioScreen extends StatelessWidget {
                   _buildInfoRow(Icons.info_outline, 'Estado del Equipo',
                       data['estado'] ?? 'Desconocido'),
                   _buildInfoRow(Icons.shopping_cart_checkout,
-                      'Artículos Solicitados', '${data['solicitados'] ?? 0}'),
+                      'Artículos Solicitados',
+                      '${data['solicitados'] ?? 0}'),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1B5E20),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      backgroundColor: verdeUANL,
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -105,7 +108,9 @@ class InventarioScreen extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.grey, size: 24),
           const SizedBox(width: 12),
-          Text('$label:', style: const TextStyle(color: Colors.grey, fontSize: 16)),
+          Text('$label:',
+              style:
+                  const TextStyle(color: Colors.grey, fontSize: 16)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -132,11 +137,11 @@ class InventarioScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF1B5E20)),
+        iconTheme: const IconThemeData(color: verdeUANL),
         title: const Text(
           'Inventario Material',
           style: TextStyle(
-              color: Color(0xFF1B5E20), fontWeight: FontWeight.bold),
+              color: verdeUANL, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -145,8 +150,7 @@ class InventarioScreen extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-                child:
-                    CircularProgressIndicator(color: Color(0xFF1B5E20)));
+                child: CircularProgressIndicator(color: verdeUANL));
           }
           if (snapshot.hasError) {
             return Center(
@@ -165,7 +169,7 @@ class InventarioScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
-              var data = snapshot.data!.docs[index].data()
+              final data = snapshot.data!.docs[index].data()
                   as Map<String, dynamic>;
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -182,25 +186,26 @@ class InventarioScreen extends StatelessWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
-                    onTap: () => _mostrarDetallesMaterial(context, data),
+                    onTap: () =>
+                        _mostrarDetallesMaterial(context, data),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       leading: CircleAvatar(
-                        backgroundColor:
-                            const Color(0xFF1B5E20).withOpacity(0.1),
+                        backgroundColor: verdeUANL.withOpacity(0.1),
                         child: const Icon(Icons.inventory_2,
-                            color: Color(0xFF1B5E20)),
+                            color: verdeUANL),
                       ),
                       title: Text(
                         data['articulo'] ?? 'Desconocido',
-                        style:
-                            const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
                       ),
                       subtitle: Text(
-                          'Cantidad: ${data['cantidad'] ?? 0} • Estado: ${data['estado'] ?? 'N/A'}'),
+                        'Cantidad: ${data['cantidad'] ?? 0} • Estado: ${data['estado'] ?? 'N/A'}',
+                      ),
                       trailing: const Icon(Icons.arrow_forward_ios,
                           size: 14, color: Colors.grey),
                     ),

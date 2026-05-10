@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminService {
@@ -175,6 +176,8 @@ class AdminService {
 
   // ---------------------------------------------------------------------------
   // CREAR TICKET
+  // Guarda también 'levantado_por' con el nombre del admin que creó el ticket.
+  // Este campo se muestra al becario pero NO se muestra al admin en su vista.
   // ---------------------------------------------------------------------------
 
   Future<void> crearTicket({
@@ -193,6 +196,10 @@ class AdminService {
       // Mediodía del jueves o viernes más próximo
       final DateTime fechaVencimiento = calcularFechaVencimiento(tipo);
 
+      // Nombre del admin que levanta el ticket (oculto en la vista admin)
+      final user = FirebaseAuth.instance.currentUser;
+      final String levantadoPor = user?.displayName ?? 'Administrador';
+
       await _firestore.collection('tickets').add({
         'titulo': titulo,
         'descripcion': descripcion,
@@ -206,6 +213,8 @@ class AdminService {
         'fecha': FieldValue.serverTimestamp(),
         // Vence exactamente a las 12:00:00 del día objetivo
         'fecha_vencimiento': Timestamp.fromDate(fechaVencimiento),
+        // Quién levantó el ticket (se muestra al becario, no al admin)
+        'levantado_por': levantadoPor,
         // Campos que el becario rellenará al completar
         'cables_danados': 0,
         'evidencia_url': '',

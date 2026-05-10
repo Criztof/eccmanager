@@ -823,6 +823,11 @@ class TicketCardAdmin extends StatelessWidget {
                             fontSize: 16,
                             color: Color(0xFF1B5E20))),
                     const SizedBox(height: 12),
+                    _detalleRow(
+                        Icons.check_circle_outline,
+                        'Completado',
+                        _formatFechaHora(
+                            data['fecha_completado'] as Timestamp?)),
                     _detalleRow(Icons.cable, 'Cables dañados',
                         '${data['cables_danados'] ?? 0}'),
                     _detalleRow(Icons.computer, 'PCs no encienden',
@@ -850,18 +855,44 @@ class TicketCardAdmin extends StatelessWidget {
                             const TextStyle(color: Colors.black87),
                       ),
                     ),
+                    // ── Evidencia: imagen en lugar de URL ──
                     if ((data['evidencia_url'] ?? '').isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      const Text('Evidencia (URL)',
+                      const Text('Evidencia fotográfica',
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15)),
-                      const SizedBox(height: 5),
-                      Text(data['evidencia_url'],
-                          style: const TextStyle(
-                              color: Colors.blue,
-                              decoration:
-                                  TextDecoration.underline)),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          data['evidencia_url'],
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          loadingBuilder:
+                              (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              height: 200,
+                              color: Colors.grey.shade100,
+                              child: const Center(
+                                  child: CircularProgressIndicator(
+                                      color: Color(0xFF1B5E20))),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: 100,
+                              color: Colors.grey.shade100,
+                              child: const Center(
+                                  child: Text(
+                                      'No se pudo cargar la imagen',
+                                      style: TextStyle(
+                                          color: Colors.grey))),
+                            );
+                          },
+                        ),
+                      ),
                     ],
                   ],
 

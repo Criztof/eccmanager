@@ -1,60 +1,68 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../services/formulario_rondin_service.dart'; // Importamos el servicio
+import '../services/formulario_rondin_service.dart';
 
 class FormularioRondinScreen extends StatefulWidget {
+  final String ticketId;
   final String salon;
+  final String titulo;
+  final String descripcion;
+  final String tipo;
 
-  const FormularioRondinScreen({super.key, required this.salon});
+  const FormularioRondinScreen({
+    super.key,
+    required this.ticketId,
+    required this.salon,
+    required this.titulo,
+    required this.descripcion,
+    required this.tipo,
+  });
 
   @override
-  State<FormularioRondinScreen> createState() => _FormularioRondinScreenState();
+  State<FormularioRondinScreen> createState() =>
+      _FormularioRondinScreenState();
 }
 
 class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
-  // === Lógica de Estado ===
-  int pcsAutoCad = 21;
+  // Contadores — empiezan en 0 (el becario los rellena)
+  int pcsAutoCad = 0;
   int pcsSinInternet = 0;
   int pcsNoEncienden = 0;
   int cablesDanados = 0;
 
   final TextEditingController _obsController = TextEditingController();
   String? _imagePath;
-  bool _isUploading = false; // Controla la animación de carga
+  bool _isUploading = false;
 
-  // Instancia del servicio
   final FormularioRondinService _rondinService = FormularioRondinService();
 
-  // Colores institucionales
   final Color verdeUANL = const Color(0xFF1B5E20);
   final Color fondoGrisaceo = const Color(0xFFF5F9F5);
 
-  // === Función para la Cámara ===
+  @override
+  void dispose() {
+    _obsController.dispose();
+    super.dispose();
+  }
+
   Future<void> _takePhoto() async {
-    final ImagePicker picker = ImagePicker();
+    final picker = ImagePicker();
     final XFile? image = await picker.pickImage(
       source: ImageSource.camera,
       maxWidth: 1024,
       imageQuality: 80,
     );
-
     if (image != null) {
-      setState(() {
-        _imagePath = image.path;
-      });
+      setState(() => _imagePath = image.path);
     }
   }
 
-  // === Función para Enviar usando el Servicio ===
   Future<void> _enviarReporte() async {
     if (_imagePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            '⚠️ La foto de evidencia es obligatoria',
-            style: TextStyle(color: Colors.white),
-          ),
+          content: Text('⚠️ La foto de evidencia es obligatoria'),
           backgroundColor: Colors.red,
         ),
       );
@@ -64,18 +72,16 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
     setState(() => _isUploading = true);
 
     try {
-      // Llamamos a la lógica separada en el servicio
-      await _rondinService.enviarReporte(
-        salon: widget.salon,
+      await _rondinService.completarTicket(
+        ticketId: widget.ticketId,
         pcsAutoCad: pcsAutoCad,
         pcsSinInternet: pcsSinInternet,
         pcsNoEncienden: pcsNoEncienden,
         cablesDanados: cablesDanados,
-        observaciones: _obsController.text,
+        observaciones: _obsController.text.trim(),
         imagePath: _imagePath!,
       );
 
-      // Éxito: Nos regresamos y avisamos
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -95,9 +101,7 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isUploading = false);
-      }
+      if (mounted) setState(() => _isUploading = false);
     }
   }
 
@@ -109,27 +113,30 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
+          icon:
+              const Icon(Icons.arrow_back_ios_new, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'RONDÍN DE RUTINA',
-              style: TextStyle(
+            Text(
+              widget.tipo.toUpperCase(),
+              style: const TextStyle(
                 color: Colors.grey,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
-              '${widget.salon} - Revisión de Software',
+              'Salón ${widget.salon} — ${widget.titulo}',
               style: TextStyle(
                 color: verdeUANL,
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ],
         ),
@@ -139,6 +146,34 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Descripción del ticket
+            if (widget.descripcion.isNotEmpty) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: verdeUANL.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline,
+                        color: verdeUANL, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.descripcion,
+                        style: TextStyle(
+                            color: verdeUANL, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+
             // 1. TARJETA DE CONTADORES
             Container(
               padding: const EdgeInsets.all(20),
@@ -150,10 +185,10 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                 children: [
                   _buildContador(
                     'PCs con AutoCad',
-                    '$pcsAutoCad equipos',
+                    pcsAutoCad == 0 ? 'Sin registros' : '$pcsAutoCad equipos',
                     pcsAutoCad,
                     (val) => setState(() => pcsAutoCad = val),
-                    verdeUANL,
+                    pcsAutoCad == 0 ? Colors.grey : verdeUANL,
                   ),
                   const Divider(height: 30),
                   _buildContador(
@@ -163,7 +198,9 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                         : '$pcsSinInternet equipos',
                     pcsSinInternet,
                     (val) => setState(() => pcsSinInternet = val),
-                    pcsSinInternet == 0 ? const Color(0xFFEF9E4E) : Colors.red,
+                    pcsSinInternet == 0
+                        ? const Color(0xFFEF9E4E)
+                        : Colors.red,
                   ),
                   const Divider(height: 30),
                   _buildContador(
@@ -173,22 +210,28 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                         : '$pcsNoEncienden equipos',
                     pcsNoEncienden,
                     (val) => setState(() => pcsNoEncienden = val),
-                    pcsNoEncienden == 0 ? const Color(0xFFEF9E4E) : Colors.red,
+                    pcsNoEncienden == 0
+                        ? const Color(0xFFEF9E4E)
+                        : Colors.red,
                   ),
                   const Divider(height: 30),
                   _buildContador(
                     'Cables sueltos/dañados',
-                    cablesDanados == 0 ? 'Perfecto' : '$cablesDanados equipos',
+                    cablesDanados == 0
+                        ? 'Perfecto'
+                        : '$cablesDanados cables',
                     cablesDanados,
                     (val) => setState(() => cablesDanados = val),
-                    cablesDanados == 0 ? const Color(0xFFEF9E4E) : Colors.red,
+                    cablesDanados == 0
+                        ? const Color(0xFFEF9E4E)
+                        : Colors.red,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 30),
 
-            // 2. SECCIÓN DE FOTO
+            // 2. EVIDENCIA FOTOGRÁFICA
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -202,9 +245,7 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                      horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF0F0),
                     borderRadius: BorderRadius.circular(10),
@@ -212,16 +253,14 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                   child: const Text(
                     '* Obligatoria',
                     style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        color: Colors.red,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 15),
-
             _imagePath == null
                 ? InkWell(
                     onTap: _takePhoto,
@@ -229,12 +268,10 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 30),
                       decoration: BoxDecoration(
-                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
                           color: verdeUANL.withOpacity(0.5),
                           width: 1.5,
-                          style: BorderStyle.solid,
                         ),
                       ),
                       child: Column(
@@ -245,25 +282,22 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                               color: verdeUANL.withOpacity(0.1),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              Icons.camera_alt_outlined,
-                              color: verdeUANL,
-                              size: 30,
-                            ),
+                            child: Icon(Icons.camera_alt_outlined,
+                                color: verdeUANL, size: 30),
                           ),
                           const SizedBox(height: 15),
                           Text(
                             'Tomar Foto de Evidencia',
                             style: TextStyle(
-                              color: verdeUANL,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                                color: verdeUANL,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
                           ),
                           const SizedBox(height: 5),
                           const Text(
                             'Toque para abrir la cámara',
-                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                            style: TextStyle(
+                                color: Colors.grey, fontSize: 13),
                           ),
                         ],
                       ),
@@ -282,19 +316,17 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                         Positioned(
                           top: 10,
                           right: 10,
-                          child: InkWell(
-                            onTap: () => setState(() => _imagePath = null),
+                          child: GestureDetector(
+                            onTap: () =>
+                                setState(() => _imagePath = null),
                             child: Container(
                               padding: const EdgeInsets.all(5),
                               decoration: const BoxDecoration(
                                 color: Colors.black45,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
-                                Icons.clear,
-                                color: Colors.white,
-                                size: 18,
-                              ),
+                              child: const Icon(Icons.clear,
+                                  color: Colors.white, size: 18),
                             ),
                           ),
                         ),
@@ -329,7 +361,7 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
             ),
             const SizedBox(height: 40),
 
-            // 4. BOTÓN DE ENVIAR
+            // 4. BOTÓN ENVIAR
             SizedBox(
               width: double.infinity,
               height: 55,
@@ -338,10 +370,10 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: verdeUANL,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
+                      borderRadius: BorderRadius.circular(15)),
                   elevation: 0,
-                  disabledBackgroundColor: verdeUANL.withOpacity(0.5),
+                  disabledBackgroundColor:
+                      verdeUANL.withOpacity(0.5),
                 ),
                 child: _isUploading
                     ? const SizedBox(
@@ -355,10 +387,8 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
                     : const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.cloud_upload_outlined,
-                            color: Colors.white,
-                          ),
+                          Icon(Icons.cloud_upload_outlined,
+                              color: Colors.white),
                           SizedBox(width: 10),
                           Text(
                             'Enviar Reporte',
@@ -379,7 +409,6 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
     );
   }
 
-  // Widgets auxiliares
   Widget _buildContador(
     String titulo,
     String subtitulo,
@@ -394,24 +423,18 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                titulo,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                  color: Colors.black87,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+              Text(titulo,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: Colors.black87),
+                  overflow: TextOverflow.ellipsis),
               const SizedBox(height: 4),
-              Text(
-                subtitulo,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: colorSubtitulo,
-                ),
-              ),
+              Text(subtitulo,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: colorSubtitulo)),
             ],
           ),
         ),
@@ -424,18 +447,13 @@ class _FormularioRondinScreenState extends State<FormularioRondinScreen> {
             SizedBox(
               width: 40,
               child: Center(
-                child: Text(
-                  '$valorActual',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text('$valorActual',
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ),
-            _buildBotonCircular(Icons.add, () {
-              onChanged(valorActual + 1);
-            }),
+            _buildBotonCircular(
+                Icons.add, () => onChanged(valorActual + 1)),
           ],
         ),
       ],
